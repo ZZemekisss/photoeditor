@@ -246,3 +246,83 @@ select:focus, input[type="number"]:focus {
   background: #F57C00;
   transform: translateY(-2px);
   box-shadow: 0 5px
+}
+/* Секция загрузки видео */
+.video-upload-section {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.video-upload-section h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Область для перетаскивания файлов */
+.file-upload-area {
+  border: 2px dashed #667eea;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.file-upload-area:hover {
+  background: #f8f9ff;
+  border-color: #764ba1;
+}
+
+.file-upload-area i {
+  font-size: 48px;
+  color: #667eea;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.file-upload-area p {
+  margin: 10px 0;
+  color: #666;
+}
+
+/* Стили для кнопки загрузки */
+.file-label {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #667eea;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.file-label:hover {
+  background: #764ba1;
+}
+
+.file-label input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Предпросмотр видео */
+.video-preview {
+  margin-top: 20px;
+}
+
+.video-preview video {
+  max-height: 300px;
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
