@@ -141,6 +141,48 @@ async function restartCameraWithNewSettings() {
   }
   await setupCamera(); // Запускаем камеру с новыми настройками
 }
+function handleVideoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Проверяем, что это видео
+  if (!file.type.startsWith('video/')) {
+    alert('Пожалуйста, выберите видеофайл');
+    return;
+  }
+
+  const videoPreview = document.getElementById('videoPreview');
+  const videoElement = videoPreview.querySelector('video');
+  const videoURL = URL.createObjectURL(file);
+
+  videoElement.src = videoURL;
+  videoPreview.style.display = 'block';
+
+  console.log('Видео загружено:', file.name);
+}
+
+// Дополнительно: обработка перетаскивания
+const videoDropArea = document.getElementById('videoDropArea');
+
+videoDropArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  videoDropArea.style.background = '#f0f4ff';
+  videoDropArea.style.borderColor = '#764ba1';
+});
+
+videoDropArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  videoDropArea.style.background = '';
+  videoDropArea.style.borderColor = '#667eea';
+
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('video/')) {
+    document.getElementById('videoUpload').files = e.dataTransfer.files;
+    handleVideoUpload({ target: { files: e.dataTransfer.files } });
+  } else {
+    alert('Пожалуйста, перетащите видеофайл');
+  }
+});
 
 // Добавляем обработчики событий для элементов управления
 document.getElementById('video-resolution').addEventListener('change', restartCameraWithNewSettings);
