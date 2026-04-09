@@ -1,4 +1,4 @@
-let currentStream = null;
+    let currentStream = null;
 
 // Шаг 1: Доступ к камере
 async function setupCamera() {
@@ -52,12 +52,37 @@ async function setupCamera() {
 
     console.log('Камера запущена с настройками:', { resolution, framerate });
 
+    // Обновляем состояние кнопки
+    updateCameraButtonState(true);
+
   } catch (error) {
     console.error('Ошибка доступа к камере:', error);
     alert('Не удалось получить доступ к камере. Проверьте разрешения браузера и настройки качества.');
   }
 }
 
+// Функция для остановки камеры
+async function stopCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
+  }
+  const video = document.getElementById('video');
+  video.srcObject = null;
+  updateCameraButtonState(false);
+}
+
+// Функция обновления состояния кнопки камеры
+function updateCameraButtonState(isEnabled) {
+  const btn = document.querySelector('.btn-primary');
+  if (isEnabled) {
+    btn.textContent = '🔒 Выключить камеру';
+    btn.onclick = stopCamera;
+  } else {
+    btn.textContent = '🔎 Включить камеру';
+    btn.onclick = setupCamera;
+  }
+}
 
 // Шаг 2: Захват фото с камеры
 function takePhoto() {
@@ -133,6 +158,7 @@ function convertImage() {
     URL.revokeObjectURL(url);
   }, `image/${format}`, quality);
 }
+
 // Функция для перезапуска камеры с новыми настройками
 async function restartCameraWithNewSettings() {
   if (currentStream) {
@@ -141,6 +167,8 @@ async function restartCameraWithNewSettings() {
   }
   await setupCamera(); // Запускаем камеру с новыми настройками
 }
+
+// Загрузка видео из галереи
 function handleVideoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -148,6 +176,7 @@ function handleVideoUpload(event) {
   // Проверяем, что это видео
   if (!file.type.startsWith('video/')) {
     alert('Пожалуйста, выберите видеофайл');
+    event.target.value = ''; // Сбрасываем выбор файла
     return;
   }
 
@@ -164,25 +193,27 @@ function handleVideoUpload(event) {
 // Дополнительно: обработка перетаскивания
 const videoDropArea = document.getElementById('videoDropArea');
 
-videoDropArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  videoDropArea.style.background = '#f0f4ff';
-  videoDropArea.style.borderColor = '#764ba1';
-});
+if (videoDropArea) {
+  videoDropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    videoDropArea.style.background = '#f0f4ff';
+    videoDropArea.style.borderColor = '#764ba1';
+  });
 
-videoDropArea.addEventListener('drop', (e) => {
-  e.preventDefault();
-  videoDropArea.style.background = '';
-  videoDropArea.style.borderColor = '#667eea';
+  videoDropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    videoDropArea.style.background = '';
+    videoDropArea.style.borderColor = '#667eea';
 
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('video/')) {
-    document.getElementById('videoUpload').files = e.dataTransfer.files;
-    handleVideoUpload({ target: { files: e.dataTransfer.files } });
-  } else {
-    alert('Пожалуйста, перетащите видеофайл');
-  }
-});
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) {
+      document.getElementById('videoUpload').files = e.dataTransfer.files;
+      handleVideoUpload({ target: { files: e.dataTransfer.files } });
+    } else {
+      alert('Пожалуйста, перетащите видеофайл');
+    }
+  });
+}
 
 function setupDownloadFunctionality() {
   const downloadBtn = document.getElementById('downloadVideoBtn');
@@ -203,7 +234,7 @@ function setupDownloadFunctionality() {
       return;
     }
 
-    const url = URL.createObjectURL(currentVideoBlob);
+        const url = URL.createObjectURL(currentVideoBlob);
     const a = document.createElement('a');
     a.href = url;
     a.download = downloadBtn.dataset.filename || 'video.mp4';
@@ -230,7 +261,11 @@ function setupDownloadFunctionality() {
 // Инициализируем функционал при загрузке страницы
 document.addEventListener('DOMContentLoaded', setupDownloadFunctionality);
 
-
 // Добавляем обработчики событий для элементов управления
 document.getElementById('video-resolution').addEventListener('change', restartCameraWithNewSettings);
 document.getElementById('video-framerate').addEventListener('change', restartCameraWithNewSettings);
+
+// Инициализация состояния кнопки камеры при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+  updateCameraButtonState(false); // Изначально камера выключена
+});
