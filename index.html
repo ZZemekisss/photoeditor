@@ -34,6 +34,22 @@
 
       <!-- Настройки и загрузка -->
       <div class="settings-section">
+        <!-- Загрузка видео -->
+<div class="video-upload-section">
+  <h3>🎬 Загрузить видео</h3>
+  <div class="file-upload-area" id="videoDropArea">
+    <i class="fas fa-video"></i>
+    <p>Перетащите видеофайл сюда или</p>
+    <label class="file-label">
+      выберите файл
+      <input type="file" id="videoUpload" accept="video/*" onchange="handleVideoUpload(event)">
+    </label>
+  </div>
+  <div id="videoPreview" class="video-preview" style="display: none;">
+    <video controls style="width: 100%; border-radius: 8px;"></video>
+  </div>
+</div>
+
         <!-- Настройки качества видео -->
         <div class="quality-settings">
           <h3>📹 Настройки видео</h3>
