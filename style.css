@@ -1,0 +1,5 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 600px; margin: auto; }
+    video, canvas, img { width: 100%; max-width: 500px; border: 1px solid #ccc; }
+    button { margin: 5px; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+    input[type="file"] { margin: 10px 0; }
