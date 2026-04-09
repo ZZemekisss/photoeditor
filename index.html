@@ -18,6 +18,29 @@
     <!-- Загруженное фото -->
     <img id="uploaded-image" style="display: none;" alt="Загруженное фото">
 
+    <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+  <h3>Настройки качества видео</h3>
+  <div>
+    <label>Разрешение: </label>
+    <select id="video-resolution">
+      <option value="low">Низкое (320×240)</option>
+      <option value="medium" selected>Среднее (640×480)</option>
+      <option value="high">Высокое (1280×720)</option>
+      <option value="full">Максимальное (родное)</option>
+    </select>
+  </div>
+  <div>
+    <label>Частота кадров: </label>
+    <select id="video-framerate">
+      <option value="15">15 fps</option>
+      <option value="24">24 fps</option>
+      <option value="30" selected>30 fps</option>
+      <option value="60">60 fps</option>
+    </select>
+  </div>
+    </div>
+    
+    
     <!-- Кнопки управления -->
     <div>
       <button onclick="setupCamera()">Включить камеру</button>
