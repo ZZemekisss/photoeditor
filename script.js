@@ -3,14 +3,61 @@ let currentStream = null;
 // Шаг 1: Доступ к камере
 async function setupCamera() {
   try {
-    currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+    // Получаем выбранные настройки
+    const resolution = document.getElementById('video-resolution').value;
+    const framerate = parseInt(document.getElementById('video-framerate').value);
+
+    // Определяем constraints в зависимости от разрешения
+    let videoConstraints;
+
+    switch (resolution) {
+      case 'low':
+        videoConstraints = {
+          width: { ideal: 320 },
+          height: { ideal: 240 },
+          frameRate: { ideal: framerate }
+        };
+        break;
+      case 'medium':
+        videoConstraints = {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: framerate }
+        };
+        break;
+      case 'high':
+        videoConstraints = {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: framerate }
+        };
+        break;
+      case 'full':
+        videoConstraints = {
+          frameRate: { ideal: framerate }
+        }; // Родное разрешение без ограничений
+        break;
+      default:
+        videoConstraints = true; // Автовыбор
+    }
+
+    const constraints = {
+      video: videoConstraints,
+      audio: false // Отключаем аудио, если не нужно
+    };
+
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
     const video = document.getElementById('video');
     video.srcObject = currentStream;
+
+    console.log('Камера запущена с настройками:', { resolution, framerate });
+
   } catch (error) {
     console.error('Ошибка доступа к камере:', error);
-    alert('Не удалось получить доступ к камере. Проверьте разрешения браузера.');
+    alert('Не удалось получить доступ к камере. Проверьте разрешения браузера и настройки качества.');
   }
 }
+
 
 // Шаг 2: Захват фото с камеры
 function takePhoto() {
@@ -86,3 +133,15 @@ function convertImage() {
     URL.revokeObjectURL(url);
   }, `image/${format}`, quality);
 }
+// Функция для перезапуска камеры с новыми настройками
+async function restartCameraWithNewSettings() {
+  if (currentStream) {
+    // Останавливаем все треки текущей камеры
+    currentStream.getTracks().forEach(track => track.stop());
+  }
+  await setupCamera(); // Запускаем камеру с новыми настройками
+}
+
+// Добавляем обработчики событий для элементов управления
+document.getElementById('video-resolution').addEventListener('change', restartCameraWithNewSettings);
+document.getElementById('video-framerate').addEventListener('change', restartCameraWithNewSettings);
