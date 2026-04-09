@@ -7,34 +7,96 @@
 </head>
 <body>
   <div class="container">
-    <h1>Фотоконвертер</h1>
+    <header class="header">
+      <h1>📸 Фотоконвертер</h1>
+      <p>Сделайте фото с камеры или загрузите изображение для конвертации</p>
+    </header>
 
-    <!-- Видеопоток с камеры -->
-    <video id="video" autoplay playsinline style="display: block;"></video>
+    <div class="main-content">
+      <!-- Видеопоток -->
+      <div class="video-section">
+        <div class="video-container">
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" style="display: none;"></canvas>
+          <img id="uploaded-image" style="display: none;" alt="Загруженное фото">
+        </div>
 
-    <!-- Canvas для фото -->
-    <canvas id="canvas" style="display: none;"></canvas>
+        <!-- Управление камерой -->
+        <div class="camera-controls">
+          <button class="btn btn-primary" onclick="setupCamera()">
+            🔎 Включить камеру
+          </button>
+          <button class="btn btn-success" onclick="takePhoto(currentStream)">
+            📷 Сделать фото
+          </button>
+        </div>
+      </div>
 
-    <!-- Загруженное фото -->
-    <img id="uploaded-image" style="display: none;" alt="Загруженное фото">
+      <!-- Настройки и загрузка -->
+      <div class="settings-section">
+        <!-- Настройки качества видео -->
+        <div class="quality-settings">
+          <h3>📹 Настройки видео</h3>
+          <div class="setting">
+            <label>Разрешение:</label>
+            <select id="video-resolution">
+              <option value="low">Низкое (320×240)</option>
+              <option value="medium" selected>Среднее (640×480)</option>
+              <option value="high">Высокое (1280×720)</option>
+              <option value="full">Максимальное</option>
+            </select>
+          </div>
+          <div class="setting">
+            <label>Частота кадров:</label>
+            <select id="video-framerate">
+              <option value="15">15 fps</option>
+              <option value="24">24 fps</option>
+              <option value="30" selected>30 fps</option>
+              <option value="60">60 fps</option>
+            </select>
+          </div>
+        </div>
 
-    <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px;">
-  <h3>Настройки качества видео</h3>
-  <div>
-    <label>Разрешение: </label>
-    <select id="video-resolution">
-      <option value="low">Низкое (320×240)</option>
-      <option value="medium" selected>Среднее (640×480)</option>
-      <option value="high">Высокое (1280×720)</option>
-      <option value="full">Максимальное (родное)</option>
-    </select>
+        <!-- Загрузка файла -->
+        <div class="upload-section">
+          <label class="file-label">
+            🖼️ Загрузить из галереи
+            <input type="file" accept="image/*" onchange="handleFileSelect(event)">
+          </label>
+        </div>
+
+        <!-- Настройки конвертации -->
+        <div class="conversion-settings">
+          <h3>↪ Настройки конвертации</h3>
+          <div class="setting">
+            <label>Формат:</label>
+            <select id="format">
+              <option value="jpeg">JPEG</option>
+              <option value="png">PNG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </div>
+          <div class="setting">
+            <label>Качество (0.1–1.0):</label>
+            <input type="number" id="quality" value="0.8" min="0.1" max="1" step="0.1">
+          </div>
+          <div class="setting">
+            <label>Ширина (px):</label>
+            <input type="number" id="width" placeholder="Авто">
+          </div>
+          <button class="btn btn-convert" onclick="convertImage()">
+            ↪ Конвертировать и скачать
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div>
-    <label>Частота кадров: </label>
-    <select id="video-framerate">
-      <option value="15">15 fps</option>
-      <option value="24">24 fps</option>
-      <option value="30" selected>30 fps</option>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+<option value="30" selected>30 fps</option>
       <option value="60">60 fps</option>
     </select>
   </div>
