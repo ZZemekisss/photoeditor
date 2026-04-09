@@ -184,6 +184,53 @@ videoDropArea.addEventListener('drop', (e) => {
   }
 });
 
+function setupDownloadFunctionality() {
+  const downloadBtn = document.getElementById('downloadVideoBtn');
+  const statusEl = document.getElementById('downloadStatus');
+  let currentVideoBlob = null;
+
+  // Функция для активации кнопки при наличии видео
+  function enableDownloadButton(blob, filename = 'video.mp4') {
+    currentVideoBlob = blob;
+    downloadBtn.disabled = false;
+    downloadBtn.dataset.filename = filename;
+  }
+
+  // Обработчик клика по кнопке скачивания
+  downloadBtn.addEventListener('click', () => {
+    if (!currentVideoBlob) {
+      showStatus('Нет видео для скачивания', 'error');
+      return;
+    }
+
+    const url = URL.createObjectURL(currentVideoBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = downloadBtn.dataset.filename || 'video.mp4';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Освобождаем память
+    URL.revokeObjectURL(url);
+    showStatus('Видео скачивается...', 'success');
+  });
+
+  // Вспомогательная функция для показа статуса
+  function showStatus(message, type) {
+    statusEl.textContent = message;
+    statusEl.className = `status-message status-${type}`;
+  }
+
+  // Публичный API для других частей приложения
+  window.enableVideoDownload = enableDownloadButton;
+  window.showDownloadStatus = showStatus;
+}
+
+// Инициализируем функционал при загрузке страницы
+document.addEventListener('DOMContentLoaded', setupDownloadFunctionality);
+
+
 // Добавляем обработчики событий для элементов управления
 document.getElementById('video-resolution').addEventListener('change', restartCameraWithNewSettings);
 document.getElementById('video-framerate').addEventListener('change', restartCameraWithNewSettings);
