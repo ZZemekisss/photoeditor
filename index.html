@@ -7,116 +7,44 @@
 </head>
 <body>
   <div class="container">
-    <header class="header">
-      <h1>📸 Фотоконвертер</h1>
-      <p>Сделайте фото с камеры или загрузите изображение для конвертации</p>
-    </header>
+    <h1>Фотоконвертер</h1>
 
-    <div class="main-content">
-      <!-- Видеопоток -->
-      <div class="video-section">
-        <div class="video-container">
-          <video id="video" autoplay playsinline></video>
-          <canvas id="canvas" style="display: none;"></canvas>
-          <img id="uploaded-image" style="display: none;" alt="Загруженное фото">
-        </div>
+    <!-- Видеопоток с камеры -->
+    <video id="video" autoplay playsinline style="display: block;"></video>
 
-        <!-- Управление камерой -->
-        <div class="camera-controls">
-          <button class="btn btn-primary" onclick="setupCamera()">
-            🔎 Включить камеру
-          </button>
-          <button class="btn btn-success" onclick="takePhoto(currentStream)">
-            📷 Сделать фото
-          </button>
-        </div>
-      </div>
+    <!-- Canvas для фото -->
+    <canvas id="canvas" style="display: none;"></canvas>
 
-      <!-- Настройки и загрузка -->
-      <div class="settings-section">
-        <!-- Загрузка видео -->
-<div class="video-upload-section">
-  <h3>🎬 Загрузить видео</h3>
-  <div class="file-upload-area" id="videoDropArea">
-    <i class="fas fa-video"></i>
-    <p>Перетащите видеофайл сюда или</p>
-    <label class="file-label">
-      выберите файл
-      <input type="file" id="videoUpload" accept="video/*" onchange="handleVideoUpload(event)">
-    </label>
-  </div>
-  <div id="videoPreview" class="video-preview" style="display: none;">
-    <video controls style="width: 100%; border-radius: 8px;"></video>
-  </div>
-</div>
+    <!-- Загруженное фото -->
+    <img id="uploaded-image" style="display: none;" alt="Загруженное фото">
 
-        <!-- Настройки качества видео -->
-        <div class="quality-settings">
-          <h3>📹 Настройки видео</h3>
-          <div class="setting">
-            <label>Разрешение:</label>
-            <select id="video-resolution">
-              <option value="low">Низкое (320×240)</option>
-              <option value="medium" selected>Среднее (640×480)</option>
-              <option value="high">Высокое (1280×720)</option>
-              <option value="full">Максимальное</option>
-            </select>
-          </div>
-          <div class="setting">
-            <label>Частота кадров:</label>
-            <select id="video-framerate">
-              <option value="15">15 fps</option>
-              <option value="24">24 fps</option>
-              <option value="30" selected>30 fps</option>
-              <option value="60">60 fps</option>
-            </select>
-          </div>
-        </div>
-        <!-- Кнопка скачивания видео -->
-<div class="download-section">
-  <h3>📥 Скачать видео</h3>
-  <button class="btn btn-download" id="downloadVideoBtn" disabled>
-    💾 Скачать текущее видео
-  </button>
-  <p class="status-message" id="downloadStatus"></p>
-</div>
-
-        <!-- Загрузка файла -->
-        <div class="upload-section">
-          <label class="file-label">
-            🖼️ Загрузить из галереи
-            <input type="file" accept="image/*" onchange="handleFileSelect(event)">
-          </label>
-        </div>
-
-        <!-- Настройки конвертации -->
-        <div class="conversion-settings">
-          <h3>↪ Настройки конвертации</h3>
-          <div class="setting">
-            <label>Формат:</label>
-            <select id="format">
-              <option value="jpeg">JPEG</option>
-              <option value="png">PNG</option>
-              <option value="webp">WebP</option>
-            </select>
-          </div>
-          <div class="setting">
-            <label>Качество (0.1–1.0):</label>
-            <input type="number" id="quality" value="0.8" min="0.1" max="1" step="0.1">
-          </div>
-          <div class="setting">
-            <label>Ширина (px):</label>
-            <input type="number" id="width" placeholder="Авто">
-          </div>
-          <button class="btn btn-convert" onclick="convertImage()">
-            ↪ Конвертировать и скачать
-          </button>
-        </div>
-      </div>
+    <!-- Кнопки управления -->
+    <div>
+      <button onclick="setupCamera()">Включить камеру</button>
+      <button onclick="takePhoto(currentStream)">Сделать фото</button>
     </div>
+
+    <div>
+      <label>Загрузить из галереи: </label>
+      <input type="file" accept="image/*" onchange="handleFileSelect(event)">
+    </div>
+
+    <div>
+      <h3>Настройки конвертации:</h3>
+      <select id="format">
+        <option value="jpeg">JPEG</option>
+        <option value="png">PNG</option>
+        <option value="webp">WebP</option>
+      </select>
+      <label>Качество (0.1–1.0): </label>
+      <input type="number" id="quality" value="0.8" min="0.1" max="1" step="0.1">
+      <label>Ширина (px): </label>
+      <input type="number" id="width" value="" placeholder="Авто">
+      <button onclick="convertImage()">Конвертировать</button>
+    </div>
+    
   </div>
 
   <script src="script.js"></script>
 </body>
-              </html>
-              
+</html>
